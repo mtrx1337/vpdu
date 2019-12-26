@@ -8,6 +8,10 @@ channel_list = []
 
 client = discord.Client()
 
+def notify(message):
+    for channel in channel_list:
+        channel.send(message)
+
 def package_updates():
     # test request
     # curl https://api.github.com/repos/void-linux/void-packages/commits | jq '.[] | .sha'
@@ -18,13 +22,11 @@ def package_updates():
         new_hashes.insert(0, entry['sha'])
 
     # if the current hashes arent listed in the old hashes, post a message
-    if 'old_hashes' in locals():
+    if 'old_hashes' in vars() or 'old_hashes' in globals():
         if old_hashes != new_hashes:
             for new_entry in new_hashes:
                 if new_entry not in old_hashes:
-                    for channel in channel_list:
-                        channel.send(str(new_entry['sha']))
-
+                    notify(str(new_entry['sha']))
             old_hashes = new_hashes
 
 def update_channel_list():
