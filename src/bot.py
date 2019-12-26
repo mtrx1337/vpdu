@@ -25,9 +25,7 @@ def package_updates():
                     for channel in channel_list:
                         channel.send(str(new_entry['sha']))
 
-            # clean up old hashes
-            if len(old_hashes):
-                old_hashes = new_hashes
+            old_hashes = new_hashes
 
 def update_channel_list():
     for server in client.guilds:
