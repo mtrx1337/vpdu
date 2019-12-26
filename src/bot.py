@@ -1,29 +1,48 @@
 from sys import argv
+from time import sleep
 from requests import get
 import discord
 
-recent_hashes = []
+old_hashes = None
 channel_list = []
 
 client = discord.Client()
 
 def package_updates():
+    # test request
+    # curl https://api.github.com/repos/void-linux/void-packages/commits | jq '.[] | .sha'
     r = get("https://api.github.com/repos/void-linux/void-packages/commits")
-    if r:
-        print(r.json())
 
-@client.event
-async def on_ready():
-    print('Logged on as {0}!'.format(client.user))
+    new_hashes = []
+    for entry in r.json():
+        new_hashes.insert(0, entry['sha'])
+
+    # if the current hashes arent listed in the old hashes, post a message
+    if 'old_hashes' in locals():
+        if old_hashes != new_hashes:
+            for new_entry in new_hashes:
+                if new_entry not in old_hashes:
+                    for channel in channel_list:
+                        channel.send(str(new_entry['sha']))
+
+            # clean up old hashes
+            if len(old_hashes):
+                old_hashes = new_hashes
+
+def update_channel_list():
     for server in client.guilds:
         for channel in server.channels:
             if channel.name == 'void-packages':
                 channel_list.append(channel)
 
-    updates = package_updates()
-    if updates:
-        for update in updates:
-            await channel.send("Package {} was updated!")
+@client.event
+async def on_ready():
+    print('Logged on as {0}!'.format(client.user))
+
+    while True:
+        update_channel_list()
+        package_updates()
+        sleep(60)
 
 # check if commandline argument was passed and exit if not
 if len(argv) < 2:
